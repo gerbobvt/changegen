@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 class ListPropertyGenerator<TModel, TResult, TProp, TKey> implements ChangeGenerator<TModel, TResult>
 {
@@ -37,30 +36,22 @@ class ListPropertyGenerator<TModel, TResult, TProp, TKey> implements ChangeGener
         List<TProp> originalList = listSelector.apply(original);
         List<TProp> currentList = listSelector.apply(current);
 
-        List<TResult> additions = new ArrayList<>();
-        if (addResultFactory != null)
-        {
-            for (TProp currentItem : currentList)
-            {
-                if (originalList.stream().noneMatch(originalItem -> compareItems(currentItem, originalItem)))
-                {
-                    additions.add(addResultFactory.apply(currentItem));
-                }
-            }
-        }
+        List<TResult> additions = getListAdditions(originalList, currentList);
 
-        List<TResult> removals = new ArrayList<>();
-        if (removeResultFactory != null)
-        {
-            for (TProp originalItem : originalList)
-            {
-                if (currentList.stream().noneMatch(currentItem -> compareItems(originalItem, currentItem)))
-                {
-                    removals.add(removeResultFactory.apply(originalItem));
-                }
-            }
-        }
+        List<TResult> removals = getListRemovals(originalList, currentList);
 
+        List<TResult> itemChanges = getListItemChanges(originalList, currentList);
+
+        List<TResult> result = new ArrayList<>(additions.size() + removals.size() + itemChanges.size());
+
+        result.addAll(additions);
+        result.addAll(removals);
+        result.addAll(itemChanges);
+
+        return result;
+    }
+
+    private List<TResult> getListItemChanges(List<TProp> originalList, List<TProp> currentList) {
         List<TResult> itemChanges = new ArrayList<>();
         for (TProp originalItem : originalList)
         {
@@ -74,14 +65,37 @@ class ListPropertyGenerator<TModel, TResult, TProp, TKey> implements ChangeGener
                 }
             }
         }
+        return itemChanges;
+    }
 
-        List<TResult> result = new ArrayList<>(additions.size() + removals.size() + itemChanges.size());
+    private List<TResult> getListRemovals(List<TProp> originalList, List<TProp> currentList) {
+        List<TResult> removals = new ArrayList<>();
+        if (removeResultFactory != null)
+        {
+            for (TProp originalItem : originalList)
+            {
+                if (currentList.stream().noneMatch(currentItem -> compareItems(originalItem, currentItem)))
+                {
+                    removals.add(removeResultFactory.apply(originalItem));
+                }
+            }
+        }
+        return removals;
+    }
 
-        result.addAll(additions);
-        result.addAll(removals);
-        result.addAll(itemChanges);
-
-        return result;
+    private List<TResult> getListAdditions(List<TProp> originalList, List<TProp> currentList) {
+        List<TResult> additions = new ArrayList<>();
+        if (addResultFactory != null)
+        {
+            for (TProp currentItem : currentList)
+            {
+                if (originalList.stream().noneMatch(originalItem -> compareItems(currentItem, originalItem)))
+                {
+                    additions.add(addResultFactory.apply(currentItem));
+                }
+            }
+        }
+        return additions;
     }
 
     @Override
@@ -95,10 +109,24 @@ class ListPropertyGenerator<TModel, TResult, TProp, TKey> implements ChangeGener
             return false;
         }
 
-        Stream<TProp> originalStream = originalList.stream();
-        Stream<TProp> currentStream = currentList.stream();
+        for (TProp originalItem : originalList)
+        {
+            Optional<TProp> currentItemOption = currentList.stream().filter(c -> compareItems(originalItem, c)).findFirst();
+            if (!currentItemOption.isPresent())
+            {
+                return false;
+            }
+            else
+            {
+                TProp currentItem = currentItemOption.get();
+                if (!itemChangeGenerator.areEqual(originalItem, currentItem))
+                {
+                    return false;
+                }
+            }
+        }
 
-        return originalStream.allMatch(originalItem -> currentStream.anyMatch(currentItem -> compareItems(originalItem, currentItem)));
+        return true;
     }
 
     private boolean compareItems(TProp original, TProp current)

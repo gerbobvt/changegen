@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class ChangeBuilderImpl<TModel, TResult> implements ChangeBuilder<TModel, TResult>
+class ChangeBuilderImpl<TModel, TResult> implements ChangeBuilder<TModel, TResult>
 {
     private List<ChangeGenerator<TModel, TResult>> changeGenerators = new ArrayList<>();
 
@@ -16,7 +16,7 @@ public class ChangeBuilderImpl<TModel, TResult> implements ChangeBuilder<TModel,
     }
 
     @Override
-    public <TProp> ChangeBuilder<TModel, TResult> AddSelectorProperty(Function<TModel, TProp> selector,
+    public <TProp> ChangeBuilder<TModel, TResult> addSelectorProperty(Function<TModel, TProp> selector,
                                                                       BiFunction<TModel, TModel, TResult> resultFactory)
             throws IllegalArgumentException
     {
@@ -36,7 +36,7 @@ public class ChangeBuilderImpl<TModel, TResult> implements ChangeBuilder<TModel,
     }
 
     @Override
-    public <TProp, TKey> ChangeBuilder<TModel, TResult> AddListProperty(Function<TModel, List<TProp>> listSelector,
+    public <TProp, TKey> ChangeBuilder<TModel, TResult> addListProperty(Function<TModel, List<TProp>> listSelector,
                                                                         Function<TProp, TKey> keySelector,
                                                                         Function<TProp, TResult> addResultFactory,
                                                                         Function<TProp, TResult> removeResultFactory,
