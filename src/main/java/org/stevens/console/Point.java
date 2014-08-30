@@ -1,4 +1,4 @@
-package org.stevens.changegen;
+package org.stevens.console;
 
 public class Point {
     private int x;

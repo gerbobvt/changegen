@@ -2,7 +2,6 @@ package org.stevens.console;
 
 import org.stevens.changegen.ChangeBuilder;
 import org.stevens.changegen.ChangeGenerator;
-import org.stevens.changegen.Point;
 
 import java.util.List;
 
